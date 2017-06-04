@@ -4,6 +4,7 @@
 #include <iostream>
 #include <thread>
 #include <vector>
+#include <cmath>
 #include "Eigen-3.3/Eigen/Core"
 #include "Eigen-3.3/Eigen/QR"
 #include "MPC.h"
@@ -32,20 +33,10 @@ string hasData(string s) {
   return "";
 }
 
-// Evaluate a polynomial.
-double polyeval(Eigen::VectorXd coeffs, double x) {
-  double result = 0.0;
-  for (int i = 0; i < coeffs.size(); i++) {
-    result += coeffs[i] * pow(x, i);
-  }
-  return result;
-}
-
 // Fit a polynomial.
 // Adapted from
 // https://github.com/JuliaMath/Polynomials.jl/blob/master/src/Polynomials.jl#L676-L716
-Eigen::VectorXd polyfit(Eigen::VectorXd xvals, Eigen::VectorXd yvals,
-                        int order) {
+Eigen::VectorXd polyfit(Eigen::VectorXd xvals, Eigen::VectorXd yvals, int order) {
   assert(xvals.size() == yvals.size());
   assert(order >= 1 && order <= xvals.size() - 1);
   Eigen::MatrixXd A(xvals.size(), order + 1);
@@ -89,7 +80,7 @@ int main() {
           vector<double> ptsy = j[1]["ptsy"];
           double px = j[1]["x"];
           double py = j[1]["y"];
-          double psi = j[1]["psi"];
+          double psi = j[1]["psi"]; // deg2rad(j[1]["psi"]);
           double v = j[1]["speed"];
 
           /*
@@ -98,8 +89,22 @@ int main() {
           * Both are in between [-1, 1].
           *
           */
-          double steer_value;
-          double throttle_value;
+	  Eigen::VectorXd xvals(ptsx.size()), yvals(ptsy.size());
+	  for (size_t i = 0; i < ptsx.size(); ++i) {
+	    xvals[i] = ptsx[i];
+	    yvals[i] = ptsy[i];
+	  }
+	  auto coeffs = polyfit(xvals, yvals, 3);
+	  auto cte = polyeval(coeffs, px) - py;
+	  auto epsi = psi - atan(polyevalderiv(coeffs, px));
+
+	  Eigen::VectorXd state(6);
+	  state << px, py, psi, v, cte, epsi;
+
+	  auto r = mpc.Solve(state, coeffs);
+	  cout << r << endl;
+          double steer_value = r[0];
+          double throttle_value = r[1]; // 0.3;
 
           json msgJson;
           msgJson["steering_angle"] = steer_value;
