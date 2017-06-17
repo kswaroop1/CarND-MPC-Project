@@ -3,7 +3,7 @@ Self-Driving Car Engineer Nanodegree Program
 
 ---
 Please click on this image to see video of PID controller driving the car for over a lap.
-[![MPC](https://img.youtube.com/vi/e74l1EP15mI/0.jpg)](https://youtu.be/e74l1EP15mI)
+[![MPC](https://img.youtube.com/vi/F5E-pF174T4/0.jpg)](https://youtu.be/F5E-pF174T4)
 
 ## Reflections
 ### Build And Run Issues
