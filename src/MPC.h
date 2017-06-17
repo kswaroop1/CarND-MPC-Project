@@ -19,6 +19,7 @@ using namespace std;
 //
 // This is the length from front to CoG that has a similar radius.
 constexpr double Lf = 2.67;
+constexpr double MPH_TO_MS = 0.447038889; // convert from mph to m/s (mph * 1.60934 * 1000) / (60 * 60);
 
 struct Offsets
 {
@@ -40,7 +41,7 @@ struct Params
 {
   Params(int MPC_pts_offsets_, double dt_, double ref_v_, double delay_) : MPC_pts_offsets(MPC_pts_offsets_), dt(dt_), ref_v(ref_v_), delay(delay_), ref_cte(0), ref_epsi(0) {  
     projected = int(delay_ / dt_); // for 100 ms delay => 0.1 sec; dt=0.05 => 0.1/0.05=2 steps in future
-    w_v = 1; w_cte = w_epsi = 100; w_delta = 5000; w_a = 10; w_delta2 = 100; w_a2 = 10; w_exp = 0.9;
+    w_v = 1; w_cte = w_epsi = 10; w_delta = 4000; w_a = 1; w_delta2 = 1; w_a2 = 1; w_exp = .9;
   }
   int MPC_pts_offsets, projected;
   double dt, ref_v, ref_cte, ref_epsi, delay;

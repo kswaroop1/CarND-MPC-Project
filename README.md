@@ -40,12 +40,12 @@ To help experiment with these (and other parameter's) values, I allowed them to 
 
 Since the processing in the model was quite performant, I had initial thinking that higher values `N` and smaller values of `dt` will give me very good and stable results.  However, as was pointed in lesson, I experienced that the further out I projected (`N*dt`), the higher the error was.  On the other hand, very low values of `N*dt` also didn't provide sufficiently accurate tracking of the path.  This observation also implied that the optimal values of `N` and `dt` will differ for different target velocities.  At higher velocity, same `N` and `dt` will project out much further and be unstable.
 
-After a few experiments, for default target velocity of 50mph, I chose `N=8` and `dt=0.1`.
+After a few experiments, for default target velocity of 50mph, I chose `N=9` and `dt=0.1`.
 
 ### Polynomial Fitting and MPC Preprocessing
 The waypoint path from simulator is in global coordinates.  It is converted to car's coordinates before passing into the model.  This implies, the vehicles position becomes (0,0), orientation becomes 0.  Rest of the processing within model is then done in car's coordinates.  It could have been done in global coordinates too, but many other transforms would be required, whilst thinking from car's point of view makes the processing slightly simpler.
 
-Another point to note is that for the simulator steering values are [-25,25] degrees *normalised* to range of [-1,1], however the model works in radians.  Hence both while feeding the model and using its outputs, the angles are (un)normalised and converted to radians.
+Another point to note is that for the simulator steering values are [-25,25] degrees in radians.
 
 ### Model Tuning
 I added several hyper-parameters to tune the weights of various parameters of the model.  During my experiments, I found stabilising `delta` had a very significant effect on car's stability, so its weight is orders of magnitude higher than even those of `cte`.  Velocity has a very low weight, such that is always penalised in favour of stability and tracking the path. Just like `N` and `dt`, these too need experimentation and optimal values differ for different target speeds.

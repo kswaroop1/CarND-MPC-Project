@@ -166,8 +166,8 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs, double 
       continue;
     }
     // steering limit further constrained based on current speed
-    vars_lowerbound[i] = -STEERING_LIMIT/(v/25); //- 0.436332;
-    vars_upperbound[i] =  STEERING_LIMIT/(v/25); //0.436332;
+    vars_lowerbound[i] = -STEERING_LIMIT; ///(v/25); //- 0.436332;
+    vars_upperbound[i] =  STEERING_LIMIT; ///(v/25); //0.436332;
   }
 
   // Acceleration/decceleration upper and lower limits.
@@ -222,7 +222,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs, double 
   auto cost = solution.obj_value;
   std::cout << "Cost " << cost << std::endl;
   mpc_x_vals.clear(); mpc_y_vals.clear();
-  for (i = 0; i < o.N; i = i + p.MPC_pts_offsets)
+  for (i = p.projected; i < o.N; i = i + p.MPC_pts_offsets)
   {
     mpc_x_vals.push_back(solution.x[o.x_start + i]);
     mpc_y_vals.push_back(solution.x[o.y_start + i]);

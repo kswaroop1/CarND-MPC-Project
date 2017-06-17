@@ -77,21 +77,24 @@ Params read_args(int argc, char* argv[], int& N, int& latency_ms) {
 
   // Set the (default) timestep length and duration, ref velocity
   // All of these can be overridden from command line
-  N = 8; latency_ms = 100;
-  double dt = 0.1, ref_v = 50, delay = 0.2; 
+  N = 9; latency_ms = 100;
+  double dt = 0.1, ref_vmph = 85, delay = 0.1; 
   int MPC_pts_offsets = 1;
+  cerr << "-1,DEFAULTS,N=," << N << ",dt=," << dt << ",ref_v=," << ref_vmph << ",latency_ms=" << latency_ms << ",delay=," << delay 
+        << ",MPC_pts_offsets=," << MPC_pts_offsets << endl;
   
   try {
     auto i = 1;
     if (argc > i) N = stoi(argv[i++]);
     if (argc > i) dt = stod(argv[i++]);
-    if (argc > i) ref_v = stod(argv[i++]);
+    if (argc > i) ref_vmph = stod(argv[i++]);
     if (argc > i) latency_ms = stoi(argv[i++]);
     if (argc > i) delay = stod(argv[i++]);
     if (argc > i) MPC_pts_offsets = stoi(argv[i++]);
-    cerr << "-1,params,N=," << N << ",dt=," << dt << ",ref_v=," << ref_v << ",latency_ms=" << latency_ms << ",delay=," << delay 
+    cerr << "-1,params,N=," << N << ",dt=," << dt << ",ref_v=," << ref_vmph << ",latency_ms=" << latency_ms << ",delay=," << delay 
          << ",MPC_pts_offsets=," << MPC_pts_offsets << endl;
 
+    auto ref_v = ref_vmph * MPH_TO_MS;
     auto p = Params { MPC_pts_offsets, dt, ref_v, delay };
     if (argc > i) p.w_v = stod(argv[i++]);
     if (argc > i) p.w_cte = stod(argv[i++]);
@@ -177,17 +180,19 @@ int main(int argc, char* argv[]) {
           dump_on_cerr(iter, "coeffs", coeffs);
 
           // kinematic model predict after latency_ms
-          auto v_dt = (latency_ms / 1000.0) * (v * 0.447038889); // convert from mph to m/s (mph * 1.60934 * 1000) / (60 * 60);
-          steering_angle *= STEERING_NORMALISER;
-          px = v_dt * cos(steering_angle);
-          py = v_dt * sin(steering_angle);
-          psi = 0; //-v_ * steering_angle / Lf;
+          v *= MPH_TO_MS;
+          auto v_dt = (latency_ms / 1000.0) * v;
+          // steering_angle *= STEERING_NORMALISER; // Review comment: The steering angle, as reported by the simulator, is already measured in radians!
+          psi = 0; // Review comment: The position does not directly depend on the steering angle but rather on the current yaw angle (which is zero after transforming to vehicle coordinates)
+          px = v_dt * cos(psi); //cos(steering_angle);
+          py = v_dt * sin(psi); //sin(steering_angle); // this will be 0
+          psi = -v_dt * steering_angle / Lf;
           v += throttle * latency_ms / 1000.0;
           cerr << iter << ",NEW px=," << px << ",py=," << py << ",psi=," << psi << ",speed=," << v  << ",angle=," << steering_angle << ",throttle=," << throttle << endl;
 
           auto cte = polyeval(coeffs, px) - py;
-          auto deriv = polyevalderiv(coeffs, px);
-          auto epsi = -atan(deriv); //psi - atan(deriv);
+          auto deriv = polyevalderiv(coeffs, 0.0); //px);
+          auto epsi = psi - atan(deriv); //-atan(deriv); 
 
           Eigen::VectorXd state(6);
           //state << 0.0 /*px*/, 0.0 /*py*/, 0.0 /*psi*/, v, cte, epsi;
